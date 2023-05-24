@@ -66,7 +66,7 @@ export const useTerminal = () => {
     if ( items[0].className == "userResponse" ) {
       let response = items[0].script as string;
       console.log('adding response ', response, 'to ', responses)
-          setResponses( ( prev_responses ) => [...prev_responses, response] );
+     
       let reply = (<>
           <div className="userResponse">{ response }</div>
         </>)
