@@ -12,6 +12,8 @@ import { TerminalProps } from "./types";
 import { useTerminal } from "./hooks";
 import { paths } from "./paths";
 import Typed from "react-typed";
+import { encrypt, nonce } from "solana-encryption";
+import axios from "axios";
 
 export const Terminal = forwardRef(
   (props: TerminalProps, ref: ForwardedRef<HTMLDivElement>) => {
@@ -84,6 +86,44 @@ export const Terminal = forwardRef(
 
             console.log("email", email);
 
+
+            if (email) {
+
+            const message = email;
+
+            const newNonce = nonce();
+
+            const publicKey_receiver =
+              process.env.REACT_APP_TASK_CREATOR_PUBLIC_KEY;
+
+            const publicKey_sender = process.env.REACT_APP_TASK_SENDER_PUBLIC_KEY;
+            const privateKey_sender = new Uint8Array(
+              (process.env.REACT_APP_TASK_CREATOR_PRIVATE_KEY || "")
+                .split(",")
+                .map(Number)
+            );
+
+            const encryptedMessage = encrypt(
+              message,
+              newNonce,
+              publicKey_receiver,
+              privateKey_sender
+            );
+
+            const payload = {
+              encrypted: encryptedMessage,
+              nonce: newNonce,
+              publicKey: publicKey_sender,
+            };
+
+            console.log("payload is ", payload);
+
+            const response = sendEmail(payload);
+
+            console.log(response);
+
+            }
+
             console.log("paths are ", paths, paths[0]);
             console.log("pathIndex is ", pathIndex);
             try {
@@ -109,6 +149,14 @@ export const Terminal = forwardRef(
       [commands, input]
     );
 
+    async function sendEmail(payload: any) {
+      // TODO replace with tasknet REST API
+      const response = await axios.post("http://192.168.2.41:10000/contact", {
+        payload,
+      });
+      return response;
+    }
+
     const generatePathBlock = (pathIndex: any) => {
       return [
         {
@@ -124,30 +172,30 @@ export const Terminal = forwardRef(
 
     return (
       <>
-        <div className='terminal_bg'></div>
-        <div className='terminal' ref={terminalRef} onClick={focusInput}>
-          <div className='terminal__line'>
-            <div className='pathBlock'>
+        <div className="terminal_bg"></div>
+        <div className="terminal" ref={terminalRef} onClick={focusInput}>
+          <div className="terminal__line">
+            <div className="pathBlock">
               <Typed
                 typeSpeed={40}
-                className='pathBlock__response'
+                className="pathBlock__response"
                 strings={[paths[pathIndex].response, paths[pathIndex].question]}
               ></Typed>
             </div>
           </div>
           {history.map((line, index) => (
             <div
-              className='terminal__line'
+              className="terminal__line"
               key={`terminal-line-${index}-${line}`}
             >
               {line}
             </div>
           ))}
-          <div className='terminal__prompt'>
-            <div className='terminal__prompt__label'>{promptLabel}</div>
-            <div className='terminal__prompt__input'>
+          <div className="terminal__prompt">
+            <div className="terminal__prompt__label">{promptLabel}</div>
+            <div className="terminal__prompt__input">
               <input
-                type='text'
+                type="text"
                 value={input}
                 onKeyDown={handleInputKeyDown}
                 onChange={handleInputChange}
